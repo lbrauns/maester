@@ -493,5 +493,8 @@ test-results
 website/build/
 /powershell/maester-tests
 
-# Don't add any test files to this folder
-tests/Custom/*.ps1
+# Ignore everything in the folder tests/Custom except the README.md
+!tests/Custom/README.md
+
+# ignore git submodules
+.gitmodules
