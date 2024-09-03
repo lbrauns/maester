@@ -494,6 +494,7 @@ website/build/
 /powershell/maester-tests
 
 # Ignore everything in the folder tests/Custom except the README.md
+tests/Custom/*
 !tests/Custom/README.md
 
 # ignore git submodules
