@@ -76,7 +76,8 @@ function ConvertFrom-MailAuthenticationRecordDkim {
                 $match = $record -match $this.matchRecord
                 if (-not $match) {
                     $this.warnings = "v: Record does not match version format"
-                    break
+                    # break
+                    # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_break?view=powershell-7.4#do-not-use-break-outside-of-a-loop-switch-or-trap
                 }
                 $p = [regex]::Match($record, $this.matchPublicKey, $this.option)
                 $this.publicKey = ($p.Groups | Where-Object { $_.Name -eq "p" }).Value
