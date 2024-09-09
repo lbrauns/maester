@@ -105,11 +105,13 @@ function ConvertFrom-MailAuthenticationRecordSpf {
                 $match = [regex]::Matches($inputRecord, $this.matchRecord, $this.option)
                 if (-not $match) {
                     $this.warnings += "v: Record does not match spf1 version format"
-                    break
+                    # break
+                    # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_break?view=powershell-7.4#do-not-use-break-outside-of-a-loop-switch-or-trap
                 }
                 if (($match | Measure-Object).Count -gt 1) {
                     $this.warnings += "v: Multiple records match spf1 version format"
-                    break
+                    # break
+                    # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_break?view=powershell-7.4#do-not-use-break-outside-of-a-loop-switch-or-trap
                 }
                 $recordTerms = [regex]::Matches($inputRecord, $this.matchTerms, $this.option)
                 foreach ($term in ($recordTerms.Groups | Where-Object { $_.Name -eq "term" })) {
