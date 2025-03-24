@@ -34,7 +34,7 @@ You may want to always use the latest, or you may want to control the tests runn
 - Open [https://github.com/new](https://github.com/new)
 - Fill in the following fields:
   - **Repository name**: E.g. `maester-tests`
-  - **Add a README file**: Select this option to initialize your repository 
+  - **Add a README file**: Select this option to initialize your repository
   - **Private**: Select this option to keep your tests private
 - Select **Create repository**
 
@@ -118,8 +118,11 @@ jobs:
         client_id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant_id: ${{ secrets.AZURE_TENANT_ID }}
         include_public_tests: true # Optional: Set to false if you are keeping to a certain version of tests or have your own tests
+        include_exchange: false    # Optional: Set to true to include the Exchange tests
         step_summary: true         # Optional: Set to false if you don't want a summary added to your GitHub Action run
         artifact_upload: true      # Optional: Set to false if you don't want summaries uploaded to GitHub Artifacts
+        install_prerelease: false  # Optional: Set to true if you want to use Measter Preview Build when running tests
+        disable_telemetry: false   # Optional: Set to true If you want telemetry information not to be logged.
         # Other inputs are available and can be reviewed in the action.yml in the Maester repository
 
 ```

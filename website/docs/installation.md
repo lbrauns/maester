@@ -32,7 +32,7 @@ Maester includes optional [CISA](tests/cisa/) tests that require additional perm
 ### Installing Azure and Exchange Online modules
 
 ```powershell
-Install-Module Az -Scope CurrentUser
+Install-Module Az.Accounts -Scope CurrentUser
 Install-Module ExchangeOnlineManagement -Scope CurrentUser
 ```
 
@@ -41,6 +41,8 @@ Install-Module ExchangeOnlineManagement -Scope CurrentUser
 ### Connecting to Azure, Exchange and other services
 
 In order to run all the CISA tests, you need to connect to the Azure, Exchange Online, and other modules.
+
+For a more detailed introduction to these concepts see the [Connect-Maester](/docs/connect-maester) documentation.
 
 Run the following command to interactively connect to the Azure, Exchange Online, and other modules. A sign in window will appear for each module.
 
@@ -60,5 +62,8 @@ Exchange Online implements a [role-based access control model](https://learn.mic
 - Monitoring with Maester
   - [Set up Maester on GitHub](/docs/monitoring/github)
   - [Set up Maester on Azure DevOps](/docs/monitoring/azure-devops)
+  - [Set up Maester on Azure Container App Jobs](/docs/monitoring/azure-container-app-job)
   - [Set up Maester email alerts](/docs/monitoring/email)
+  - [Set up Maester Teams alerts](/docs/monitoring/teams)
+  - [Set up Maester Slack alerts](/docs/monitoring/slack)
 - [Writing Custom Tests](/docs/writing-tests)

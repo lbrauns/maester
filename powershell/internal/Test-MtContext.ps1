@@ -23,12 +23,13 @@ function Test-MtContext {
     } else {
         $requiredScopes = Get-MtGraphScope -SendMail:$SendMail -SendTeamsMessage:$SendTeamsMessage
         $currentScopes = Get-MgContext | Select-Object -ExpandProperty Scopes
-        $missingScopes = $requiredScopes | Where-Object { $currentScopes -notcontains $_ }
+        $missingScopes = $requiredScopes | Where-Object { $currentScopes -notcontains $_  -and $currentScopes -notcontains ($_ -replace '.Read.', '.ReadWrite.') }
+        $missingScopes = $requiredScopes | Where-Object { $currentScopes -notcontains $_  }
 
         if ($missingScopes) {
             $message = "These Graph permissions are missing in the current connection => ($($missingScopes))."
             $authType = (Get-MgContext).AuthType
-            if ($authType -eq  'Delegated') {
+            if ($authType -eq 'Delegated') {
                 $message += " Please use 'Connect-Maester'. For more information, use 'Get-Help Connect-Maester'."
             } else {
                 $clientId = (Get-MgContext).ClientId

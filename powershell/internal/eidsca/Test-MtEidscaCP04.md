@@ -5,14 +5,14 @@ CISA SCuBA 2.7: Non-Admin Users SHALL Be Prevented From Providing Consent To Thi
 #### Test script
 ```
 https://graph.microsoft.com/beta/settings
-.values | where-object name -eq 'EnableAdminConsentRequests' | select-object -expand value = 'true'
+.values | where-object name -eq 'EnableAdminConsentRequests' | select-object -expand value -eq 'true'
 ```
 
 #### Related links
 
 - [Open in Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer?request=settings&method=GET&version=beta&GraphUrl=https://graph.microsoft.com)
 - [directorySetting resource type - Microsoft Graph beta | Microsoft Learn](https://learn.microsoft.com/en-us/graph/api/resources/directorysetting)
-- [View in Microsoft Entra admin center](https://portal.azure.com/#view/Microsoft_AAD_IAM/ConsentPoliciesMenuBlade/~/AdminConsentSettings)
+- [View in Microsoft Entra admin center](https://entra.microsoft.com/#view/Microsoft_AAD_IAM/ConsentPoliciesMenuBlade/~/AdminConsentSettings)
 
 <!--- Results --->
 %TestResult%

@@ -41,28 +41,38 @@ function Get-MtExo {
     ### - add them to the hashtable below
     ### - confirm the command's return type is in OutputType (e.g. (Get-AcceptedDomain).GetType().Name)
     $commands = @{
-
-        "AcceptedDomain"               = "Get-AcceptedDomain"
-        "RemoteDomain"                 = "Get-RemoteDomain"
-        "TransportConfig"              = "Get-TransportConfig"
-        "TransportRule"                = "Get-TransportRule"
-        "OrganizationConfig"           = "Get-OrganizationConfig"
-        "DkimSigningConfig"            = "Get-DkimSigningConfig"
-        "SharingPolicy"                = "Get-SharingPolicy"
-        "DlpComplianceRule"            = "Get-DlpComplianceRule"
-        "DlpCompliancePolicy"          = "Get-DlpCompliancePolicy"
-        "MalwareFilterPolicy"          = "Get-MalwareFilterPolicy"
-        "HostedContentFilterPolicy"    = "Get-HostedContentFilterPolicy"
-        "HostedConnectionFilterPolicy" = "Get-HostedConnectionFilterPolicy"
-        "AntiPhishPolicy"              = "Get-AntiPhishPolicy"
-        "SafeAttachmentPolicy"         = "Get-SafeAttachmentPolicy"
-        "SafeLinksPolicy"              = "Get-SafeLinksPolicy"
-        "ATPBuiltInProtectionRule"     = "Get-ATPBuiltInProtectionRule"
-        "EOPProtectionPolicyRule"      = "Get-EOPProtectionPolicyRule"
-        "ATPProtectionPolicyRule"      = "Get-ATPProtectionPolicyRule"
-        "ProtectionAlert"              = "Get-ProtectionAlert"
-        "EXOMailbox"                   = "Get-EXOMailbox"
-
+        "AcceptedDomain"                 = "Get-AcceptedDomain"
+        "RemoteDomain"                   = "Get-RemoteDomain"
+        "TransportConfig"                = "Get-TransportConfig"
+        "TransportRule"                  = "Get-TransportRule"
+        "OrganizationConfig"             = "Get-OrganizationConfig"
+        "DkimSigningConfig"              = "Get-DkimSigningConfig"
+        "SharingPolicy"                  = "Get-SharingPolicy"
+        "DlpComplianceRule"              = "Get-DlpComplianceRule"
+        "DlpCompliancePolicy"            = "Get-DlpCompliancePolicy"
+        "MalwareFilterPolicy"            = "Get-MalwareFilterPolicy"
+        "HostedContentFilterPolicy"      = "Get-HostedContentFilterPolicy"
+        "HostedConnectionFilterPolicy"   = "Get-HostedConnectionFilterPolicy"
+        "AntiPhishPolicy"                = "Get-AntiPhishPolicy"
+        "SafeAttachmentPolicy"           = "Get-SafeAttachmentPolicy"
+        "SafeLinksPolicy"                = "Get-SafeLinksPolicy"
+        "HostedOutboundSpamFilterPolicy" = "Get-HostedOutboundSpamFilterPolicy"
+        "AtpPolicyForO365"               = "Get-AtpPolicyForO365"
+        "ATPBuiltInProtectionRule"       = "Get-ATPBuiltInProtectionRule"
+        "EOPProtectionPolicyRule"        = "Get-EOPProtectionPolicyRule"
+        "ATPProtectionPolicyRule"        = "Get-ATPProtectionPolicyRule"
+        "ProtectionAlert"                = "Get-ProtectionAlert"
+        "EXOMailbox"                     = "Get-EXOMailbox"
+        "ArcConfig"                      = "Get-ArcConfig"
+        "ExternalInOutlook"              = "Get-ExternalInOutlook"
+        "InboundConnector"               = "Get-InboundConnector"
+        "SafeLinksRule"                  = "Get-SafeLinksRule"
+        "SafeAttachmentRule"             = "Get-SafeAttachmentRule"
+        "MalwareFilterRule"              = "Get-MalwareFilterRule"
+        "AntiPhishRule"                  = "Get-AntiPhishRule"
+        "QuarantinePolicy"               = "Get-QuarantinePolicy"
+        "HostedOutboundSpamFilterRule"   = "Get-HostedOutboundSpamFilterRule"
+        "HostedContentFilterRule"        = "Get-HostedContentFilterRule"
     }
 
 
@@ -77,7 +87,7 @@ function Get-MtExo {
 
     if ($null -eq $__MtSession.ExoCache.$Request) {
         Write-Verbose "$request not in cache, requesting."
-        $response = Invoke-Expression $commands.$Request
+        $response = Invoke-Expression $commands.$Request -ErrorAction Stop
         $__MtSession.ExoCache.$Request = $response
     }
     else {

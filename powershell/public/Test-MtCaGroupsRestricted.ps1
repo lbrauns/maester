@@ -52,10 +52,10 @@ Function Test-MtCaGroupsRestricted {
     -not $_.isManagementRestricted -and -not $_.isAssignableToRole
 }
 
-  $result = ($unrestrictedGroups | Measure-Object).Count -eq 0
+  $result = ($UnrestrictedGroups | Measure-Object).Count -eq 0
 
   if ( $result ) {
-    $ResultDescription = "Well done! All security groups with assignment in Conditional Access are protected!"
+    $ResultDescription = "Well done! All security groups with assignment in Conditional Access are protected."
   } else {
     $ResultDescription = "These security groups with assignments in Conditional Access are not protected by Restricted Management Admin Units or Role Assignable groups."
     $ImpactedCaGroups = "`n`n#### Impacted Conditional Access Policies`n`n | Security Group | Condition | Policy name | `n"
@@ -63,7 +63,9 @@ Function Test-MtCaGroupsRestricted {
   }
 
   foreach ($UnrestrictedGroup in $UnrestrictedGroups) {
+    # Get all policies (the state of policy does not have to be enabled)
     $ImpactedPolicies = Get-MtConditionalAccessPolicy | Where-Object { $_.conditions.users.includeGroups -contains $UnrestrictedGroup.id -or $_.conditions.users.excludeGroups -contains $UnrestrictedGroup.id }
+
     foreach ($ImpactedPolicy in $ImpactedPolicies) {
       if ($ImpactedPolicy.conditions.users.includeGroups -contains $UnrestrictedGroup.id) {
         $Condition = "include"
@@ -79,7 +81,7 @@ Function Test-MtCaGroupsRestricted {
   }
 
   $resultMarkdown = $ResultDescription + $ImpactedCaGroups
-  Add-MtTestResultDetail -Description $testDescription -Result $resultMarkdown
+  Add-MtTestResultDetail -Result $resultMarkdown
 
   return $result
 }

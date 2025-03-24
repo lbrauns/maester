@@ -55,6 +55,11 @@ Invoke-Maester -TeamId '00000000-0000-0000-0000-000000000000' -TeamChannelId '19
 Runs all the tests and posts a summary of the results to a Teams channel.
 
 .EXAMPLE
+Invoke-Maester -TeamChannelWebhookUri 'https://some-url.logic.azure.com/workflows/invoke?api-version=2016-06-01'
+
+Runs all the tests and posts a summary of the results to a Teams channel.
+
+.EXAMPLE
 Invoke-Maester -Verbosity Normal
 
 Shows results of tests as they are run including details on failed tests.
@@ -79,7 +84,7 @@ function Invoke-Maester {
     [Alias("Invoke-MtMaester")]
     [CmdletBinding()]
     param (
-        # Specifies one or more paths to files containing tests. The value is a path\file name or name pattern. Wildcards are permitted.
+        # Specifies path to files containing tests. The value is a path\file name or name pattern. Wildcards are permitted.
         [Parameter(Position = 0)]
         [string] $Path,
 
@@ -145,9 +150,21 @@ function Invoke-Maester {
         # To get the TeamChannelId, right-click on the channel in Teams and select 'Get link to channel'. Use the value found between channel and the channel name. e.g. /channel/<TeamChannelId>/my%20channel
         [string] $TeamChannelId,
 
+        # Optional. The webhook Uri where the message should be posted. e.g. https://some-url/?value=123
+        # To get the Webhook Uri, right-click on the channel in Teams and select 'Workflow'. Create a workflow using the 'Post to a channel when a webhook request is received' template. Use the value after complete
+        [string] $TeamChannelWebhookUri,
+
         # Skip the graph connection check.
         # This is used for running tests that does not require a graph connection.
-        [switch] $SkipGraphConnect
+        [switch] $SkipGraphConnect,
+
+        # Disable Telemetry
+        # If set, telemetry information will not be logged.
+        [switch] $DisableTelemetry,
+`
+        # Skip the version check.
+        # If set, the version check will not be performed.
+        [switch] $SkipVersionCheck
     )
 
     function GetDefaultFileName() {
@@ -218,29 +235,45 @@ function Invoke-Maester {
         return $PesterConfiguration
     }
 
+    $version = Get-MtModuleVersion
     # ASCII Art using style "ANSI Shadow"
     $motd = @"
 
-███╗   ███╗ █████╗ ███████╗███████╗████████╗███████╗██████╗     ██╗   ██╗ ██████╗ ██╗  ██╗
-████╗ ████║██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔════╝██╔══██╗    ██║   ██║██╔═████╗██║  ██║
-██╔████╔██║███████║█████╗  ███████╗   ██║   █████╗  ██████╔╝    ██║   ██║██║██╔██║███████║
-██║╚██╔╝██║██╔══██║██╔══╝  ╚════██║   ██║   ██╔══╝  ██╔══██╗    ╚██╗ ██╔╝████╔╝██║╚════██║
-██║ ╚═╝ ██║██║  ██║███████╗███████║   ██║   ███████╗██║  ██║     ╚████╔╝ ╚██████╔╝██╗  ██║
-╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝      ╚═══╝   ╚═════╝ ╚═╝  ╚═╝
+███╗   ███╗ █████╗ ███████╗███████╗████████╗███████╗██████╗
+████╗ ████║██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔════╝██╔══██╗
+██╔████╔██║███████║█████╗  ███████╗   ██║   █████╗  ██████╔╝
+██║╚██╔╝██║██╔══██║██╔══╝  ╚════██║   ██║   ██╔══╝  ██╔══██╗
+██║ ╚═╝ ██║██║  ██║███████╗███████║   ██║   ███████╗██║  ██║
+╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝ v$version
 
 "@
     Write-Host -ForegroundColor Green $motd
 
     Clear-ModuleVariable # Reset the graph cache and urls to avoid stale data
 
+    if (-not $DisableTelemetry) {
+        Write-Telemetry -EventName InvokeMaester
+    }
+
     $isMail = $null -ne $MailRecipient
 
     $isTeamsChannelMessage = -not ([String]::IsNullOrEmpty($TeamId) -or [String]::IsNullOrEmpty($TeamChannelId))
+
+    $isWebUri = -not ([String]::IsNullOrEmpty($TeamChannelWebhookUri))
 
     if ($SkipGraphConnect) {
         Write-Host "🔥 Skipping graph connection check" -ForegroundColor Yellow
     } else {
         if (!(Test-MtContext -SendMail:$isMail -SendTeamsMessage:$isTeamsChannelMessage)) { return }
+    }
+
+    if ($isWebUri) {
+        # Check if TeamChannelWebhookUri is a valid URL
+       $urlPattern = '^(https)://[^\s/$.?#].[^\s]*$'
+        if (-not ($TeamChannelWebhookUri -match $urlPattern)) {
+            Write-Output "Invalid Webhook URL: $TeamChannelWebhookUri"
+            return
+        }
     }
 
     $out = [PSCustomObject]@{
@@ -261,6 +294,14 @@ function Invoke-Maester {
     # Only run CAWhatIf tests if explicitly requested
     if ("CAWhatIf" -notin $Tag) {
         $ExcludeTag += "CAWhatIf"
+    }
+
+    # If $Tag is not set, run all tests except the ones with the tag "Full"
+    if (-not $Tag) {
+        $ExcludeTag += "Full"
+    } # Check if Full is included then add All to the include as default
+    elseif ("Full" -in $Tag) {
+        $Tag += "All"
     }
 
     $pesterConfig = GetPesterConfiguration -Path $Path -Tag $Tag -ExcludeTag $ExcludeTag -PesterConfiguration $PesterConfiguration
@@ -332,6 +373,11 @@ function Invoke-Maester {
             Send-MtTeamsMessage -MaesterResults $maesterResults -TeamId $TeamId -TeamChannelId $TeamChannelId -TestResultsUri $MailTestResultsUri
         }
 
+        if ($TeamChannelWebhookUri) {
+            Write-MtProgress -Activity "Sending Teams message"
+            Send-MtTeamsMessage -MaesterResults $maesterResults -TeamChannelWebhookUri $TeamChannelWebhookUri -TestResultsUri $MailTestResultsUri
+        }
+
         if ($Verbosity -eq 'None') {
             # Show final summary
             Write-Host "`nTests Passed ✅: $($pesterResults.PassedCount), " -NoNewline -ForegroundColor Green
@@ -339,7 +385,10 @@ function Invoke-Maester {
             Write-Host "Skipped ⚫: $($pesterResults.SkippedCount)`n" -ForegroundColor DarkGray
         }
 
-        Get-IsNewMaesterVersionAvailable | Out-Null
+        if (-not $SkipVersionCheck -and 'Next' -ne $version) {
+            # Don't check version if running in dev
+            Get-IsNewMaesterVersionAvailable | Out-Null
+        }
 
         Write-MtProgress -Activity "🔥 Completed tests" -Status "Total $($pesterResults.TotalCount) " -Completed -Force # Clear progress bar
     }

@@ -12,7 +12,7 @@ Specifies the duration the request is active before it automatically expires if 
 |-|-|
 | **Name** | requestDurationInDays |
 | **Control** | Consent Framework - Admin Consent Request |
-| **Description** | Represents the policy for enabling or disabling the Azure AD admin consent workflow. The admin consent workflow allows users to request access for apps that they wish to use and that require admin authorization before users can use the apps to access organizational data.  |
+| **Description** | Represents the policy for enabling or disabling the Entra ID (Azure AD) admin consent workflow. The admin consent workflow allows users to request access for apps that they wish to use and that require admin authorization before users can use the apps to access organizational data.  |
 | **Severity** |  |
 
 ## How to fix
@@ -25,7 +25,7 @@ Specifies the duration the request is active before it automatically expires if 
 | **Recommendation** |  |
 | **Configuration** | policies/adminConsentRequestPolicy |
 | **Setting** | `requestDurationInDays` |
-| **Recommended Value** | '30' |
+| **Recommended Value** | is less than or equal to '30' |
 | **Default Value** |  |
 | **Graph API Docs** | [adminConsentRequestPolicy resource type - Microsoft Graph v1.0 - Microsoft Learn](https://learn.microsoft.com/en-us/graph/api/resources/adminconsentrequestpolicy) |
 | **Graph Explorer** | [Open in Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer?request=policies/adminConsentRequestPolicy&method=GET&version=beta&GraphUrl=https://graph.microsoft.com) |

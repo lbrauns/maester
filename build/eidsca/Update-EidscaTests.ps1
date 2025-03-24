@@ -10,6 +10,7 @@
     ./build/eidsca/Update-EidscaTests.ps1
 #>
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'This command updates multiple EIDSCA tests.')]
 param (
     # Folder where generated test file should be written to.
     [string] $TestFilePath = "$PSScriptRoot/../../tests/EIDSCA/Test-EIDSCA.Generated.Tests.ps1",
@@ -20,7 +21,7 @@ param (
     # Folder where control functions should be generated
     [string] $PowerShellFunctionsPath = "$PSScriptRoot/../../powershell/internal/eidsca",
 
-    # Foldere where the public function should be generated
+    # Folder where the public function should be generated
     [string] $PublicFunctionPath = "$PSScriptRoot/../../powershell/public/eidsca",
 
     # Control name to filter on
@@ -46,7 +47,7 @@ function GetVersion($graphUri) {
 
 function GetRecommendedValue($RecommendedValue) {
     if($RecommendedValue -notlike "@('*,*')") {
-        $compareOperators = @(">=",">","<")
+        $compareOperators = @(">=","<=",">","<")
         foreach ($compareOperator in $compareOperators) {
             if ($RecommendedValue.StartsWith($compareOperator)) {
                 $RecommendedValue = $RecommendedValue.Replace($compareOperator, "")
@@ -62,6 +63,10 @@ function GetRecommendedValueMarkdown($RecommendedValueMarkdown) {
     if($RecommendedValueMarkdown -like "@('*,*')") {
         $RecommendedValueMarkdown = $RecommendedValueMarkdown -replace "@\(", "" -replace "\)", ""
         return "$RecommendedValueMarkdown"
+    } elseif ($RecommendedValueMarkdown.StartsWith(">") -or $RecommendedValueMarkdown.StartsWith("<")) {
+        $RecommendedValueText = (GetCompareOperator($RecommendedValueMarkdown)).Text
+        $RecommendedValueMarkdown = "$RecommendedValueText $RecommendedValue"
+        return "$RecommendedValueMarkdown"
     } else {
         return "'$RecommendedValueMarkdown'"
     }
@@ -74,6 +79,7 @@ function GetCompareOperator($RecommendedValue) {
             pester     = 'BeIn'
             powershell = 'in'
             text       = 'is one of the following values'
+            valuetype  = 'string'
         }
     } elseif ($RecommendedValue.StartsWith(">=")) {
         $compareOperator = [PSCustomObject]@{
@@ -81,6 +87,15 @@ function GetCompareOperator($RecommendedValue) {
             pester     = 'BeGreaterOrEqual'
             powershell = 'ge'
             text       = 'is greater than or equal to'
+            valuetype  = 'string'
+        }
+    } elseif ($RecommendedValue.StartsWith("<=")) {
+        $compareOperator = [PSCustomObject]@{
+            name       = '<='
+            pester     = 'BeLessOrEqual'
+            powershell = 'le'
+            text       = 'is less than or equal to'
+            valuetype  = 'int'
         }
     } elseif ($RecommendedValue.StartsWith(">")) {
         $compareOperator = [PSCustomObject]@{
@@ -88,6 +103,7 @@ function GetCompareOperator($RecommendedValue) {
             pester     = 'BeGreaterThan'
             powershell = 'gt'
             text       = 'is greater than'
+            valuetype  = 'int'
         }
     } elseif ($RecommendedValue.StartsWith("<")) {
         $compareOperator = [PSCustomObject]@{
@@ -95,6 +111,7 @@ function GetCompareOperator($RecommendedValue) {
             pester     = 'BeLessThan'
             powershell = 'lt'
             text       = 'is less than'
+            valuetype  = 'int'
         }
 
     } else {
@@ -103,6 +120,7 @@ function GetCompareOperator($RecommendedValue) {
             pester     = 'Be'
             powershell = 'eq'
             text       = 'is'
+            valuetype  = 'string'
         }
     }
     return $compareOperator
@@ -306,6 +324,12 @@ function UpdateTemplate($template, $control, $controlItem, $docName, $isDoc) {
         }
 
         $output = $template
+
+        # Replace string with int if DefaultValue is a number and expecting an int as configuration value
+        if ($controlItem.DefaultValue -match "^[\d\.]+$") {
+            $output = $output -replace 'string', 'int'
+        }
+
         $output = $output -replace '%DocName%', $docName
         $output = $output -replace '%ControlName%', $control.ControlName
         $output = $output -replace '%Description%', $control.Description
@@ -327,6 +351,7 @@ function UpdateTemplate($template, $control, $controlItem, $docName, $isDoc) {
         $output = $output -replace '%CompareOperatorText%', $compareOperator.Text
         $output = $output -replace '%CompareOperator%', $compareOperator.Name
         $output = $output -replace '%PwshCompareOperator%', $compareOperator.powershell.Replace("'", "")
+        $output = $output -replace '%ValueType%', $compareOperator.valuetype
         $output = $output -replace '%RecommendedValue%', $recommendedValue
         $output = $output -replace '%RecommendedValueMarkdown%', $recommendedValueMarkdown
         $output = $output -replace '%CurrentValue%', $CurrentValue
@@ -349,7 +374,7 @@ function UpdateTemplate($template, $control, $controlItem, $docName, $isDoc) {
         $output = $output -replace '%SkipCheck%', "$($SkipCheck)"
 
         # Extract variable name from the condition to build syntax for TestCases
-        $SkipConditionVariable = ($controlItem.SkipCondition -split ' ')[0]
+        $SkipConditionVariable = ($controlItem.SkipCondition  | Select-String -Pattern '\$([^\s]+)').Matches.Value
         $SkipConditionVariableName = $SkipConditionVariable -replace '[$()]', ''
         $output = $output -replace '%TestCases%', " -TestCases @{ $($SkipConditionVariableName) = $($SkipConditionVariable) }"
     } else {
@@ -424,7 +449,7 @@ Describe "%ControlName%" -Tag "EIDSCA", "Security", "All", "%CheckId%" {
     It "%CheckId%: %ControlName% - %DisplayName%. See https://maester.dev/docs/tests/%DocName%"%TestCases% {
         <#
             Check if "https://graph.microsoft.com/%ApiVersion%/%RelativeUri%"
-            .%CurrentValue% %CompareOperator% %RecommendedValue%
+            .%CurrentValue% -%PwshCompareOperator% %RecommendedValue%
         #>
         Test-MtEidscaControl -CheckId %CheckShortId% | Should -%ShouldOperator% %RecommendedValue%
     }
@@ -434,6 +459,7 @@ Describe "%ControlName%" -Tag "EIDSCA", "Security", "All", "%CheckId%" {
         $testOutput = UpdateTemplate -template $testTemplate -control $control -controlItem $controlItem -docName $docName
         $docsOutput = UpdateTemplate -template $docsTemplate -control $control -controlItem $controlItem -docName $docName -isDoc $true
         $psOutput = UpdateTemplate -template $psTemplate -control $control -controlItem $controlItem -docName $docName
+
         $psMarkdownOutput = UpdateTemplate -template $psMarkdownTemplate -control $control -controlItem $controlItem -docName $docName -isDoc $true
 
         if ($testOutput -ne '') {

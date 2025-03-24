@@ -31,7 +31,7 @@ function Test-MtCaExclusionForDirectorySyncAccount {
     $DirectorySynchronizationAccountRoleTemplateId = "d29b2b05-8046-44ba-8758-1e26182fcf32"
     try {
         $DirectorySynchronizationAccountRoleId = Invoke-MtGraphRequest -RelativeUri "directoryRoles(roleTemplateId='$DirectorySynchronizationAccountRoleTemplateId')" -Select id | Select-Object -ExpandProperty id
-        $DirectorySynchronizationAccounts = Invoke-MtGraphRequest -RelativeUri "directoryRoles/$DirectorySynchronizationAccountRoleId/members" -Select id | Select-Object -ExpandProperty id
+        $DirectorySynchronizationAccounts = Invoke-MtGraphRequest -RelativeUri "directoryRoles/$DirectorySynchronizationAccountRoleId/members" -Select id | Get-ObjectProperty -Property id
         if ( $null -eq $DirectorySynchronizationAccounts ) {
             throw "Directory synchronization accounts not found"
         }
@@ -59,6 +59,15 @@ function Test-MtCaExclusionForDirectorySyncAccount {
             # Skip this policy, because it does not apply to any internal users, but only guests
             $currentresult = $true
             Write-Verbose "Skipping $($policy.displayName) because no internal users is scoped - $currentresult"
+            continue
+        }
+
+        if ( $policy.grantcontrols.builtincontrols -contains 'block' `
+            -and "exchangeActiveSync" -in $policy.conditions.clientAppTypes `
+            -and "other" -in $policy.conditions.clientAppTypes){
+            # Skip this policy, because it just blocks legacy authentication
+            $currentresult = $true
+            Write-Verbose "Skipping $($policy.displayName) legacy auth is not used for sync - $currentresult"
             continue
         }
 

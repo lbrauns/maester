@@ -60,7 +60,7 @@ function Get-RelatedPolicy {
     foreach ($obj in $Arr) {
         # Check if the excluded object is present in the policy
         if ($obj.ExcludedObjects -contains $ObjName) {
-            $result += "        - Excluded in policy '$($obj.PolicyName)'`n`n"
+            $result += "        > Excluded in policy '$($obj.PolicyName)'`n"
         }
     }
 
@@ -132,7 +132,11 @@ function Test-MtCaGap {
         $_.Conditions.Users.IncludeUsers | ForEach-Object { $includedUsers.Add($_) | Out-Null }
         $_.Conditions.Users.ExcludeGroups | ForEach-Object { $excludedGroups.Add($_) | Out-Null }
         $_.Conditions.Users.IncludeGroups | ForEach-Object { $includedGroups.Add($_) | Out-Null }
-        $_.Conditions.Users.ExcludeRoles | ForEach-Object { $excludedRoles.Add($_) | Out-Null }
+        If ($_ -ne "d29b2b05-8046-44ba-8758-1e26182fcf32") {
+            # Role: 'Directory Synchronization Accounts' excluded
+            # Policy: 'Multifactor authentication for Microsoft partners and vendors'
+            $_.Conditions.Users.ExcludeRoles | ForEach-Object { $excludedRoles.Add($_) | Out-Null }
+        }
         $_.Conditions.Users.IncludeRoles | ForEach-Object { $includedRoles.Add($_) | Out-Null }
         $_.Conditions.Applications.ExcludeApplications | ForEach-Object { $excludedApplications.Add($_) | Out-Null }
         $_.Conditions.Applications.IncludeApplications | ForEach-Object { $includedApplications.Add($_) | Out-Null }
@@ -140,8 +144,8 @@ function Test-MtCaGap {
         $_.Conditions.ClientApplications.IncludeServicePrincipals | ForEach-Object { $includedServicePrincipals.Add($_) | Out-Null }
         $_.Conditions.Locations.ExcludeLocations | ForEach-Object { $excludedLocations.Add($_) | Out-Null }
         $_.Conditions.Locations.IncludeLocations | ForEach-Object { $includedLocations.Add($_) | Out-Null }
-        $_.Conditions.Locations.Platforms | ForEach-Object { $excludedPlatforms.Add($_) | Out-Null }
-        $_.Conditions.Locations.Platforms | ForEach-Object { $includedPlatforms.Add($_) | Out-Null }
+        $_.Conditions.Platforms.ExcludePlatforms | ForEach-Object { $excludedPlatforms.Add($_) | Out-Null }
+        $_.Conditions.Platforms.IncludePlatforms | ForEach-Object { $includedPlatforms.Add($_) | Out-Null }
 
         # Create a mapping for each policy with excluded objects
         [System.Collections.ArrayList]$allExcluded = $_.Conditions.Users.ExcludeUsers + `
@@ -150,7 +154,7 @@ function Test-MtCaGap {
             $_.Conditions.Applications.ExcludeApplications + `
             $_.Conditions.ClientApplications.ExcludeServicePrincipals + `
             $_.Conditions.Locations.ExcludeLocations + `
-            $_.Conditions.Locations.Platforms
+            $_.Conditions.Platforms.ExcludePlatforms
         # Create the mapping
         $mapping = [PSCustomObject]@{
             PolicyName = $_.DisplayName
@@ -190,57 +194,87 @@ function Test-MtCaGap {
         # Add user objects to results
         if ($differencesUsers.Count -ne 0) {
             $testResult = "The following user objects did not have a fallback:`n`n"
-            $differencesUsers | ForEach-Object {
-                $testResult += "    - $_`n`n"
-                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
+            ForEach ($Object in $differencesUsers) {
+                Try {
+                    $DisplayName = (Invoke-MtGraphRequest -RelativeUri 'users' -ApiVersion v1.0 -UniqueId $Object -ErrorAction Stop).displayName
+                } Catch {
+                    $DisplayName = "${Object} (Unable to resolve GUID)"
+                }
+                $testResult += "`n    User: ${DisplayName}`n"
+                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $Object
             }
         }
         # Add group objects to results
         if ($differencesGroups.Count -ne 0) {
             $testResult += "The following group objects did not have a fallback:`n`n"
-            $differencesGroups | ForEach-Object {
-                $testResult += "    - $_`n`n"
-                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
+            ForEach ($Object in $differencesGroups) {
+                Try {
+                    $DisplayName = (Invoke-MtGraphRequest -RelativeUri 'groups' -ApiVersion v1.0 -UniqueId $Object -ErrorAction Stop).displayName
+                } Catch {
+                    $DisplayName = "${Object} (Unable to resolve GUID)"
+                }
+                $testResult += "`n    Group: ${DisplayName}`n"
+                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $Object
             }
         }
         # Add role objects to results
         if ($differencesRoles.Count -ne 0) {
             $testResult += "The following role objects did not have a fallback:`n`n"
-            $differencesRoles | ForEach-Object {
-                $testResult += "    - $_`n`n"
+            ForEach ($Object in $differencesRoles) {
+                Try {
+                    $DisplayName = (Invoke-MtGraphRequest -RelativeUri 'directoryRoles' -ApiVersion v1.0 -UniqueId $Object -ErrorAction Stop).displayName
+                } Catch {
+                    $DisplayName = "${Object} (Unable to resolve GUID)"
+                }
+                $testResult += "`n    Role: ${DisplayName}`n"
                 $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
             }
         }
         # Add application objects to results
         if ($differencesApplications.Count -ne 0) {
             $testResult += "The following application objects did not have a fallback:`n`n"
-            $differencesApplications | ForEach-Object {
-                $testResult += "    - $_`n`n"
-                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
+            ForEach ($Object in $differencesApplications) {
+                Try {
+                    $DisplayName = (Invoke-MtGraphRequest -RelativeUri 'serviceprincipals' -ApiVersion v1.0 -Filter "appId eq '${Object}'" -ErrorAction Stop).displayName
+                } Catch {
+                    $DisplayName = "${Object} (Unable to resolve GUID)"
+                }
+                $testResult += "`n    Application: ${DisplayName}`n"
+                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $Object
             }
         }
         # Add service principal objects to results
         if ($differencesServicePrincipals.Count -ne 0) {
             $testResult += "The following service principal objects did not have a fallback:`n`n"
-            $differencesServicePrincipals | ForEach-Object {
-                $testResult += "    - $_`n`n"
-                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
+            ForEach ($Object in $differencesServicePrincipals) {
+                Try {
+                    $DisplayName = (Invoke-MtGraphRequest -RelativeUri 'serviceprincipals' -ApiVersion v1.0 -UniqueId $Object -ErrorAction Stop).displayName
+                } Catch {
+                    $DisplayName = "${Object} (Unable to resolve GUID)"
+                }
+                $testResult += "`n    Service Principal: ${DisplayName}`n"
+                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $Object
             }
         }
         # Add location objects to results
         if ($differencesLocations.Count -ne 0) {
             $testResult += "The following location objects did not have a fallback:`n`n"
-            $differencesLocations | ForEach-Object {
-                $testResult += "    - $_`n`n"
-                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
+            ForEach ($Object in $differencesLocations) {
+                Try {
+                    $DisplayName = (Invoke-MtGraphRequest -RelativeUri 'identity/conditionalAccess/namedLocations' -ApiVersion v1.0 -UniqueId $Object -ErrorAction Stop).displayName
+                } Catch {
+                    $DisplayName = "${Object} (Unable to resolve GUID)"
+                }
+                $testResult += "`n    Location: ${DisplayName}`n"
+                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $Object
             }
         }
         # Add platform objects to results
         if ($differencesPlatforms.Count -ne 0) {
             $testResult += "The following platform objects did not have a fallback:`n`n"
-            $differencesPlatforms | ForEach-Object {
-                $testResult += "    - $_`n`n"
-                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $_
+            ForEach ($Object in $differencesPlatforms) {
+                $testResult += "`n    Platform: ${Object}`n"
+                $testResult += Get-RelatedPolicy -Arr $mappingArray -ObjName $Object
             }
         }
     }

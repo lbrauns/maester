@@ -20,7 +20,7 @@ function Get-IsNewMaesterVersionAvailable {
     param()
 
     try {
-        $currentVersion = ((Get-Module -Name Maester).Version | Select-Object -Last 1).ToString()
+        $currentVersion = $ModuleInfo.ModuleVersion
         $latestVersion = (Find-Module -Name Maester).Version
 
         if ($currentVersion -lt $latestVersion) {
@@ -32,6 +32,6 @@ function Get-IsNewMaesterVersionAvailable {
             Write-Host " → Get the latest tests built by the Maester team and community." -ForegroundColor Yellow
             return $true
         }
-    } catch { Write-Verbose -Message $_}
+    } catch { Write-Verbose -Message $_ }
     return $false
 }
