@@ -63,6 +63,7 @@ function Get-MtGraphScope {
         'Policy.Read.ConditionalAccess'
         'SharePointTenantSettings.Read.All'
         'UserAuthenticationMethod.Read.All'
+        'AuditLog.Read.All'
     )
 
     # Any changes made to these permission scopes should be reflected in the documentation.
