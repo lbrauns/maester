@@ -64,9 +64,9 @@ function Add-MtTestResultDetail {
         [string] $TestName = $____Pester.CurrentTest.ExpandedName,
 
         [Parameter(Mandatory = $false)]
-        [ValidateSet('NotConnectedAzure', 'NotConnectedExchange', 'NotDotGovDomain', 'NotLicensedEntraIDP1', 'NotConnectedSecurityCompliance',
+        [ValidateSet('NotConnectedAzure', 'NotConnectedExchange', 'NotConnectedGraph', 'NotDotGovDomain', 'NotLicensedEntraIDP1', 'NotConnectedSecurityCompliance', 'NotConnectedTeams',
             'NotLicensedEntraIDP2', 'NotLicensedEntraIDGovernance', 'NotLicensedEntraWorkloadID', 'NotLicensedExoDlp', "LicensedEntraIDPremium", 'NotSupported', 'Custom',
-            'NotLicensedMdo', 'AdvAudit'
+            'NotLicensedMdo','NotLicensedMdoP2','NotLicensedMdoP1', 'NotLicensedAdvAudit', 'NotLicensedEop'
         )]
         # Common reasons for why the test was skipped.
         [string] $SkippedBecause,

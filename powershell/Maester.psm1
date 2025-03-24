@@ -20,6 +20,7 @@ $__MtSession = @{
 	Connections = @()
 	DnsCache = @()
 	ExoCache = @{}
+	OrcaCache = @{}
 }
 New-Variable -Name __MtSession -Value $__MtSession -Scope Script -Force
 
@@ -34,3 +35,5 @@ foreach ($script in ($privateScripts + $publicScripts)) {
 		Write-Error -Message ("Failed to import function {0}: {1}" -f $script, $_)
 	}
 }
+
+$ModuleInfo = Import-PowerShellDataFile -Path "$PsScriptRoot/Maester.psd1"

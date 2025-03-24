@@ -16,7 +16,10 @@
 function Test-MtCisaDmarcRecordExist {
     [CmdletBinding()]
     [OutputType([bool])]
-    param()
+    param(
+        # Check 2nd Level Domains Explicitly per CISA
+        [switch]$Strict
+    )
 
     if(!(Test-MtConnection ExchangeOnline)){
         Add-MtTestResultDetail -SkippedBecause NotConnectedExchange
@@ -30,6 +33,7 @@ function Test-MtCisaDmarcRecordExist {
     }
     #>
 
+    $seen = @{}
     $dmarcRecords = @()
     foreach($domain in $acceptedDomains){
         #This regex does NOT capture for third level domain scenarios
@@ -42,12 +46,23 @@ function Test-MtCisaDmarcRecordExist {
             $domainName = $domain.domainname
         }
 
+        if ($seen[$domainName]) {
+            continue
+        }
+        $seen[$domainName] = $True
+
         $dmarcRecord = Get-MailAuthenticationRecord -DomainName $domainName -Records DMARC
         $dmarcRecord | Add-Member -MemberType NoteProperty -Name "pass" -Value "Failed"
         $dmarcRecord | Add-Member -MemberType NoteProperty -Name "reason" -Value ""
 
         if($dmarcRecord.dmarcRecord.GetType().Name -eq "DMARCRecord"){
             $dmarcRecord.pass = "Passed"
+        }elseif($domain.IsCoexistenceDomain){
+            $dmarcRecord.pass = "Skipped"
+            $dmarcRecord.reason = "Coexistence domain"
+        }elseif($domain.InitialDomain){
+            $dmarcRecord.pass = "Skipped"
+            $dmarcRecord.reason = "Initial domain"
         }elseif($dmarcRecord.dmarcRecord -like "*not available"){
             $dmarcRecord.pass = "Skipped"
             $dmarcRecord.reason = $dmarcRecord.dmarcRecord
@@ -58,8 +73,14 @@ function Test-MtCisaDmarcRecordExist {
         $dmarcRecords += $dmarcRecord
     }
 
-    if("Failed" -in $dmarcRecords.pass){
+    if("Failed" -in $dmarcRecords.pass -and $Strict){
         $testResult = $false
+    }elseif("Failed" -in $dmarcRecords.pass -and -not $Strict){
+        if("Failed" -in ($dmarcRecords|Where-Object{$_.domain -in $acceptedDomains.DomainName}).pass){
+            $testResult = $false
+        }else{
+            $testResult = $true
+        }
     }elseif("Failed" -notin $dmarcRecords.pass -and "Passed" -notin $dmarcRecords.pass){
         Add-MtTestResultDetail -SkippedBecause NotSupported
         return $null
@@ -75,14 +96,22 @@ function Test-MtCisaDmarcRecordExist {
 
     $passResult = "✅ Pass"
     $failResult = "❌ Fail"
+    $skipResult = "🗄️ Skip"
     $result = "| Domain | Result | Reason | Targets |`n"
     $result += "| --- | --- | --- | --- |`n"
     foreach ($item in $dmarcRecords | Sort-Object -Property domain) {
         switch($item.pass){
             "Passed" {$itemResult = $passResult}
             "Failed" {$itemResult = $failResult}
+            "Skipped" {$itemResult = $skipResult}
         }
-        $aggregates = $item.dmarcRecord.reportForensic.mailAddress
+
+        if ($item.pass -eq "Skipped") {
+            $result += "| $($item.domain) | $($itemResult) | $($item.reason) ||`n"
+            continue
+        }
+
+        $aggregates = $item.dmarcRecord.reportAggregate.mailAddress
         $aggregatesCount = ($aggregates|Measure-Object).Count
         if($aggregatesCount -ge 3){
             $aggregates = "$($aggregates[0]), $($aggregates[1]), "

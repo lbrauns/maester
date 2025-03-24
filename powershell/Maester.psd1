@@ -55,7 +55,7 @@ PowerShellVersion = '5.1'
    pre-installed with Windows. See <https://pester.dev/docs/introduction/installation/#windows>. Pester will be updated
    if necessary by Install-MaesterTests.
 #>
-RequiredModules = @( @{ModuleName = 'Microsoft.Graph.Authentication'; GUID = '883916f2-9184-46ee-b1f8-b6a2fb784cee'; ModuleVersion = '2.2.0'; }
+RequiredModules = @( @{ModuleName = 'Microsoft.Graph.Authentication'; GUID = '883916f2-9184-46ee-b1f8-b6a2fb784cee'; ModuleVersion = '2.25.0'; }
                      @{ModuleName = 'Pester'; GUID = 'a699dea5-2c73-4616-a270-1f7abb777e71'; ModuleVersion = '0.0.0'; } )
 
 # Assemblies that must be loaded prior to importing this module
@@ -87,6 +87,7 @@ FunctionsToExport = 'Add-MtTestResultDetail', 'Clear-MtGraphCache', 'Connect-Mae
                'Test-MtCaBlockLegacyExchangeActiveSyncAuthentication',
                'Test-MtCaBlockLegacyOtherAuthentication',
                'Test-MtCaBlockUnknownOrUnsupportedDevicePlatform',
+               'Test-MtCaDeviceCodeFlow',
                'Test-MtCaDeviceComplianceAdminsExists',
                'Test-MtCaDeviceComplianceExists', 'Test-MtCaEmergencyAccessExists',
                'Test-MtCaEnforceNonPersistentBrowserSession',
@@ -94,8 +95,8 @@ FunctionsToExport = 'Add-MtTestResultDetail', 'Clear-MtGraphCache', 'Connect-Mae
                'Test-MtCaExclusionForDirectorySyncAccount',
                'Test-MtCaLicenseUtilization', 'Test-MtCaMfaForAdmin',
                'Test-MtCaMfaForAdminManagement', 'Test-MtCaMfaForAllUsers',
-               'Test-MtCaGroupsRestricted',
-               'Test-MtCaGap',
+               "Test-MtCaGroupsRestricted", 'Test-MtCaMisconfiguredIDProtection',
+               "Test-MtCaGap", "Test-MtCaReferencedGroupsExist",
                'Test-MtCaMfaForGuest', 'Test-MtCaMfaForRiskySignIn',
                'Test-MtCaRequirePasswordChangeForHighUserRisk',
                'Test-MtCaSecureSecurityInfoRegistration', 'Test-MtCisaDiagnosticSettings',
@@ -131,21 +132,65 @@ FunctionsToExport = 'Add-MtTestResultDetail', 'Clear-MtGraphCache', 'Connect-Mae
                'Test-MtCisaSafeLinkClickTracking', 'Test-MtCisaExoAlert', 'Test-MtCisaExoAlertSiem',
                'Test-MtCisaAuditLog', 'Test-MtCisaAuditLogPremium', 'Test-MtCisaAuditLogRetention',
                'Get-MtExo', 'Clear-MtExoCache', 'Test-MtCisaSpoSharing', 'Test-MtCisaSpoSharingAllowedDomain',
+               'Test-MtCisAuditLogSearch',
                'Test-MtCisCloudAdmin',
                'Test-MtCisGlobalAdminCount',
                'Test-MtCis365PublicGroup',
                'Test-MtCisCalendarSharing',
+               'Test-MtCisDkim',
                'Test-MtCisSharedMailboxSignIn',
                'Test-MtCisPasswordExpiry',
                'Test-MtCisCustomerLockBox',
+               'Test-MtCisSafeLink',
+               'Test-MtCisAttachmentFilter',
+               'Test-MtCisAttachmentFilterComprehensive',
+               'Test-MtCisInternalMalwareNotification',
+               'Test-MtCisSafeAttachment',
+               'Test-MtCisSafeAttachmentsAtpPolicy',
+               "Test-MtCisOutboundSpamFilterPolicy",
+               "Test-MtCisSafeAntiPhishingPolicy",
+               'Test-MtCisCommunicateWithSkypeUsers',
+               'Test-MtCisCommunicateWithUnmanagedTeamsUsers', 'Test-MtCisTeamsLobbyBypass',
+               'Test-MtCisTeamsReportSecurityConcerns', 'Test-MtCisThirdPartyAndCustomApps',
+               'Test-MtCisThirdPartyFileSharing',
+               'Test-MtCisZAP',
                'Test-MtConditionalAccessWhatIf',
                'Test-MtConnection',
+               'Test-MtDeviceCleanupSettings', 'Test-MtDeviceComplianceSettings',
                'Test-MtEidscaControl',
                'Test-MtPimAlertsExists', 'Test-MtPrivPermanentDirectoryRole',
                'Update-MaesterTests', 'Compare-MtTestResult',  'Get-MailAuthenticationRecord',
                'ConvertFrom-MailAuthenticationRecordSpf', 'ConvertFrom-MailAuthenticationRecordMx',
                'ConvertFrom-MailAuthenticationRecordDmarc', 'ConvertFrom-MailAuthenticationRecordDkim',
-               'Resolve-SpfRecord', 'Clear-MtDnsCache'
+               'Resolve-SpfRecord', 'Clear-MtDnsCache',
+               'Test-MtTeamsRestrictParticipantGiveRequestControl',
+               'Test-MtHighRiskAppPermissions',
+               'Test-ORCA100',
+               'Test-ORCA101', 'Test-ORCA102', 'Test-ORCA103',
+               'Test-ORCA104', 'Test-ORCA105', 'Test-ORCA106',
+               'Test-ORCA107', 'Test-ORCA108', 'Test-ORCA108_1',
+               'Test-ORCA109', 'Test-ORCA110', 'Test-ORCA111',
+               'Test-ORCA112', 'Test-ORCA113', 'Test-ORCA114',
+               'Test-ORCA115', 'Test-ORCA116',
+               'Test-ORCA118_1', 'Test-ORCA118_2', 'Test-ORCA118_3', 'Test-ORCA118_4',
+               'Test-ORCA119',
+               'Test-ORCA120_malware', 'Test-ORCA120_phish', 'Test-ORCA120_spam',
+               'Test-ORCA121', 'Test-ORCA123',
+               'Test-ORCA124', 'Test-ORCA139', 'Test-ORCA140',
+               'Test-ORCA141', 'Test-ORCA142', 'Test-ORCA143',
+               'Test-ORCA156', 'Test-ORCA158', 'Test-ORCA179',
+               'Test-ORCA180', 'Test-ORCA189', 'Test-ORCA189_2',
+               'Test-ORCA205', 'Test-ORCA220', 'Test-ORCA221',
+               'Test-ORCA222', 'Test-ORCA223', 'Test-ORCA224',
+               'Test-ORCA225', 'Test-ORCA226', 'Test-ORCA227',
+               'Test-ORCA228', 'Test-ORCA229', 'Test-ORCA230',
+               'Test-ORCA231', 'Test-ORCA232', 'Test-ORCA233',
+               'Test-ORCA233_1', 'Test-ORCA234', 'Test-ORCA235',
+               'Test-ORCA236', 'Test-ORCA237', 'Test-ORCA238',
+               'Test-ORCA239', 'Test-ORCA240', 'Test-ORCA241',
+               'Test-ORCA242', 'Test-ORCA243', 'Test-ORCA244',
+               'Test-MtGroupCreationRestricted',
+               'Convert-MtResultsToFlatObject'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -206,4 +251,3 @@ HelpInfoURI = 'https://maester.dev/docs/commands/'
 # DefaultCommandPrefix = ''
 
 }
-
