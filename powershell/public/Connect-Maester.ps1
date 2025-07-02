@@ -83,6 +83,9 @@ function Connect-Maester {
       # If specified, the cmdlet will include the scopes for read write API endpoints. This is currently required for querying global admin roles in PIM.
       [switch] $Privileged,
 
+      # If specified, scopes will not be defined on connection and we will just use the assigned rolepermissions of the executing user.
+      [switch]$NoScopes,
+
       # If specified, the cmdlet will use the device code flow to authenticate to Graph and Azure.
       # This will open a browser window to prompt for authentication and is useful for non-interactive sessions and on Windows when SSO is not desired.
       [switch] $UseDeviceCode,
@@ -117,9 +120,21 @@ function Connect-Maester {
       Write-Verbose "Connecting to Microsoft Graph"
       try {
          if ($TenantId) {
-            Connect-MgGraph -Scopes (Get-MtGraphScope -SendMail:$SendMail -SendTeamsMessage:$SendTeamsMessage -Privileged:$Privileged) -NoWelcome -UseDeviceCode:$UseDeviceCode -Environment $Environment -TenantId $TenantId
+            if($NoScopes){
+               Connect-MgGraph -NoWelcome -UseDeviceCode:$UseDeviceCode -Environment $Environment -TenantId $TenantId
+            }
+            else{
+               Connect-MgGraph -Scopes (Get-MtGraphScope -SendMail:$SendMail -SendTeamsMessage:$SendTeamsMessage -Privileged:$Privileged) -NoWelcome -UseDeviceCode:$UseDeviceCode -Environment $Environment -TenantId $TenantId
+            }
+
          } else {
-            Connect-MgGraph -Scopes (Get-MtGraphScope -SendMail:$SendMail -SendTeamsMessage:$SendTeamsMessage -Privileged:$Privileged) -NoWelcome -UseDeviceCode:$UseDeviceCode -Environment $Environment
+            if($NoScopes){
+               Connect-MgGraph -NoWelcome -UseDeviceCode:$UseDeviceCode -Environment $Environment
+            }
+            else{
+               Connect-MgGraph -Scopes (Get-MtGraphScope -SendMail:$SendMail -SendTeamsMessage:$SendTeamsMessage -Privileged:$Privileged) -NoWelcome -UseDeviceCode:$UseDeviceCode -Environment $Environment
+            }
+
             $TenantId = (Get-MgContext).TenantId
          }
       } catch [Management.Automation.CommandNotFoundException] {
