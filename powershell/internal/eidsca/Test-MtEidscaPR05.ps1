@@ -27,7 +27,7 @@ function Test-MtEidscaPR05 {
     }
     $result = Invoke-MtGraphRequest -RelativeUri "settings" -ApiVersion beta
 
-    [string]$tenantValue = $result.values | where-object name -eq 'LockoutDurationInSeconds' | select-object -expand value
+    [int]$tenantValue = $result.values | where-object name -eq 'LockoutDurationInSeconds' | select-object -expand value
     $testResult = $tenantValue -ge '60'
     $tenantValueNotSet = ($null -eq $tenantValue -or $tenantValue -eq "") -and '60' -notlike '*$null*'
 
@@ -38,7 +38,7 @@ function Test-MtEidscaPR05 {
     } else {
         $testResultMarkdown = "Your tenant is configured as **$($tenantValue)**.`n`nThe recommended value is greater than or equal to **'60'** for **settings**"
     }
-    Add-MtTestResultDetail -Result $testResultMarkdown
+    Add-MtTestResultDetail -Result $testResultMarkdown -Severity 'High'
 
     return $tenantValue
 }

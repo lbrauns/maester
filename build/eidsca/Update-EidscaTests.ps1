@@ -87,7 +87,7 @@ function GetCompareOperator($RecommendedValue) {
             pester     = 'BeGreaterOrEqual'
             powershell = 'ge'
             text       = 'is greater than or equal to'
-            valuetype  = 'string'
+            valuetype  = 'int'
         }
     } elseif ($RecommendedValue.StartsWith("<=")) {
         $compareOperator = [PSCustomObject]@{
@@ -330,6 +330,11 @@ function UpdateTemplate($template, $control, $controlItem, $docName, $isDoc) {
             $output = $output -replace 'string', 'int'
         }
 
+        # Map severity to Maester values
+        if($controlItem.Severity -eq 'Informational') {
+            $controlItem.Severity = 'Info'
+        }
+
         $output = $output -replace '%DocName%', $docName
         $output = $output -replace '%ControlName%', $control.ControlName
         $output = $output -replace '%Description%', $control.Description
@@ -445,7 +450,7 @@ foreach ($control in $aadsc) {
         $docName = $controlItem.CheckId
 
 $testTemplate = @'
-Describe "%ControlName%" -Tag "EIDSCA", "Security", "All", "%CheckId%" {
+Describe "EIDSCA" -Tag "EIDSCA", "Security", "All", "%CheckId%" {
     It "%CheckId%: %ControlName% - %DisplayName%. See https://maester.dev/docs/tests/%DocName%"%TestCases% {
         <#
             Check if "https://graph.microsoft.com/%ApiVersion%/%RelativeUri%"

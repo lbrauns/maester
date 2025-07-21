@@ -7,7 +7,7 @@ BeforeDiscovery {
     }
 }
 
-Describe "Entra Recommendations" -Tag "Maester", "Entra", "Security", "All", "Recommendation" -ForEach $EntraRecommendations {
+Describe "Maester/Entra" -Tag "Maester", "Entra", "Security", "All", "Recommendation" -ForEach $EntraRecommendations {
     It "MT.1024: Entra Recommendation - <displayName>. See https://maester.dev/docs/tests/MT.1024" -Tag "MT.1024", $recommendationType {
 
         $EntraPremiumRecommendations = @(
@@ -18,18 +18,54 @@ Describe "Entra Recommendations" -Tag "Maester", "Entra", "Security", "All", "Re
         $recommendationUrl = "https://entra.microsoft.com/#view/Microsoft_AAD_IAM/RecommendationDetails.ReactView/recommendationId/$id"
         $recommendationLinkMd = "`n`n➡️ Open [Recommendation - $displayName]($recommendationUrl) in the Entra admin portal."
 
+        # The $id looks like "{tenantId}_{recommendationKey}"
+        # Extract the recommendation key (the part after the underscore)
+        $recommendationKey = $id -replace '^[^_]+_', ''
+
+        $recommendationSequence = @{
+            "insiderRiskPolicy" = 1
+            "userRiskPolicy" = 2
+            "signinRiskPolicy" = 3
+            "selfServicePasswordReset" = 4
+            "roleOverlap" = 5
+            "oneAdmin" = 6
+            "passwordHashSync" = 7
+            "pwagePolicyNew" = 8
+            "mfaRegistrationV2" = 9
+            "integratedApps" = 10
+            "blockLegacyAuthentication" = 11
+            "adminMFAV2" = 12
+            "servicePrincipalKeyExpiry" = 13
+            "applicationCredentialExpiry" = 14
+            "staleAppCreds" = 15
+            "staleApps" = 16
+            "aadGraphDeprecationServicePrincipal" = 17
+            "unusedEnterpriseApps" = 18
+        }
+
+        # Get sequential number for current recommendation, default to the key if not found
+        $sequentialNumber = $recommendationKey
+        if ($recommendationSequence.ContainsKey($recommendationKey)) {
+            $sequentialNumber = $recommendationSequence[$recommendationKey]
+        }
+
+        $recommendationName = $recommendationKey -replace "_", " "
+        $recommendationName = $recommendationName -replace "Policy", "policy"
+
+        $testTitle = "MT.1024.$($sequentialNumber): Entra Recommendation - $displayName"
+
         $EntraIDPlan = Get-MtLicenseInformation -Product "EntraID"
         if ( $EntraIDPlan -ne "P2" ) {
             $EntraPremiumRecommendations | ForEach-Object {
                 if ( $id -match "$($_)$" ) {
-                    Add-MtTestResultDetail -SkippedBecause NotLicensedEntraIDP2
+                    Add-MtTestResultDetail -TestTitle $testTitle -SkippedBecause NotLicensedEntraIDP2
                     return $null
                 }
             }
         }
 
         if ( $status -match "dismissed" ) {
-            Add-MtTestResultDetail -Description $benefits -SkippedBecause Custom -SkippedCustomReason "This recommendation has been **Dismissed** by an administrator.`n`nIf this test is valid for your tenant you can change it's state from **Dismissed** to **Active**. $recommendationLinkMd"
+            Add-MtTestResultDetail -TestTitle $testTitle -Description $benefits -SkippedBecause Custom -SkippedCustomReason "This recommendation has been **Dismissed** by an administrator.`n`nIf this test is valid for your tenant you can change its state from **Dismissed** to **Active**. $recommendationLinkMd"
             return $null
         }
 
@@ -58,7 +94,7 @@ Describe "Entra Recommendations" -Tag "Maester", "Entra", "Security", "All", "Re
         }
 
         $ResultMarkdown = $insights + $deepLink + $impactedResourcesList + "`n`n#### Remediation actions:`n`n" + $ActionSteps
-        Add-MtTestResultDetail -Description $benefits -Result $ResultMarkdown
+        Add-MtTestResultDetail -TestTitle $testTitle -Description $benefits -Result $ResultMarkdown
         #endregion
         # Actual test
         $status | Should -Be "completedBySystem" -Because $benefits

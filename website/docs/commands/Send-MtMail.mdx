@@ -31,8 +31,8 @@ When running interactively this can be done by running the following command:
 Connect-MtGraph -SendMail
 ```
 
-When running in a non-interactive environment (Azure DevOps, GitHub) the Mail.Send permission
-must be granted to the application in the Microsoft Entra portal.
+When running in a non-interactive environment (Azure DevOps, GitHub) the app needs permission to send from a mailbox,
+see https://maester.dev/docs/monitoring/email/ for instructions.
 
 ## EXAMPLES
 
@@ -134,6 +134,7 @@ Accept wildcard characters: False
 The user id of the sender of the mail.
 Defaults to the current user.
 This is required when using application permissions.
+Accepts either a GUID or UPN (User Principal Name) format.
 
 ```yaml
 Type: String

@@ -1,4 +1,4 @@
-# Generated on 03/11/2025 11:45:05 by .\build\orca\Update-OrcaTests.ps1
+# Generated on 04/16/2025 21:38:23 by .\build\orca\Update-OrcaTests.ps1
 
 using module ".\orcaClass.psm1"
 
@@ -38,7 +38,6 @@ class ORCA242 : ORCACheck
         $this.Links= @{
             "Automated investigation and response in Microsoft 365 Defender"="https://learn.microsoft.com/en-us/microsoft-365/security/defender/m365d-autoir"
         }
-        $this.SCC=$True
     }
 
     <#
@@ -73,7 +72,7 @@ class ORCA242 : ORCACheck
             {
                 $FoundAlert = $Config["ProtectionAlert"] | Where-Object {$_.Name -eq $ImportantAlert}
 
-                # These alerts cannot be removed, so if it's $null, then the alert isnt deployed to this tenant, so we dont want
+                # These alerts cannot be removed, so if it's $null, then the alert isn't deployed to this tenant, so we don't want
                 # to flag them at all.
 
                 if($null -ne $FoundAlert)

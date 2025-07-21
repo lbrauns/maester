@@ -14,8 +14,8 @@
         - https://github.com/maester365/maester/blob/main/powershell/public/Test-MtCaEmergencyAccessExists.md
         - https://github.com/maester365/maester/blob/main/powershell/public/Test-MtCaEmergencyAccessExists.ps1
 
-    The markdown file can include a seperator `<!--- Results --->` to split the description and result sections.
-    This allows for the overview and detailed information to be displayes separately in the Test results.
+    The markdown file can include a separator `<!--- Results --->` to split the description and result sections.
+    This allows for the overview and detailed information to be displayed separately in the Test results.
 
 .EXAMPLE
     Add-MtTestResultDetail -Description 'Test description' -Result 'Test result'
@@ -52,7 +52,7 @@ function Add-MtTestResultDetail {
         # This will be inserted into the contents of Result parameter if the result contains a placeholder %TestResult%.
         [Object[]] $GraphObjects,
 
-        # The type of graph object, this will be used to show the right deeplink to the test results report.
+        # The type of graph object, this will be used to show the right deep-link to the test results report.
         [ValidateSet('AuthenticationMethod', 'AuthorizationPolicy', 'ConditionalAccess', 'ConsentPolicy',
             'Devices', 'Domains', 'Groups', 'IdentityProtection', 'Users', 'UserRole'
         )]
@@ -63,17 +63,30 @@ function Add-MtTestResultDetail {
         [Parameter(Mandatory = $false)]
         [string] $TestName = $____Pester.CurrentTest.ExpandedName,
 
+        # A custom title for the test in the format of "MT.XXXX: <TestName>. Used in data driven tests like Entra recommendations 1024"
+        [Parameter(Mandatory = $false)]
+        [string] $TestTitle,
+
+        # Common reasons for why the test was skipped.
         [Parameter(Mandatory = $false)]
         [ValidateSet('NotConnectedAzure', 'NotConnectedExchange', 'NotConnectedGraph', 'NotDotGovDomain', 'NotLicensedEntraIDP1', 'NotConnectedSecurityCompliance', 'NotConnectedTeams',
             'NotLicensedEntraIDP2', 'NotLicensedEntraIDGovernance', 'NotLicensedEntraWorkloadID', 'NotLicensedExoDlp', "LicensedEntraIDPremium", 'NotSupported', 'Custom',
-            'NotLicensedMdo','NotLicensedMdoP2','NotLicensedMdoP1', 'NotLicensedAdvAudit', 'NotLicensedEop'
+            'NotLicensedMdo', 'NotLicensedMdoP2', 'NotLicensedMdoP1', 'NotLicensedAdvAudit', 'NotLicensedEop', 'Error'
         )]
-        # Common reasons for why the test was skipped.
         [string] $SkippedBecause,
 
-        [Parameter(Mandatory = $false)]
         # A custom reason for why the test was skipped. Requires `-SkippedBecause Custom`.
-        [string] $SkippedCustomReason
+        [Parameter(Mandatory = $false)]
+        [string] $SkippedCustomReason,
+
+        # The error object that caused the test to be skipped.
+        [Parameter(Mandatory = $false)]
+        $SkippedError,
+
+        # Severity level of the test result. Leave empty if no Severity is defined yet.
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Critical', 'High', 'Medium', 'Low', 'Info', '')]
+        [string] $Severity
     )
 
     $hasGraphResults = $GraphObjects -and $GraphObjectType
@@ -84,50 +97,96 @@ function Add-MtTestResultDetail {
                 throw "SkippedBecause is set to 'Custom' but no SkippedCustomReason was provided."
             }
             $SkippedReason = $SkippedCustomReason
+        } elseif ($SkippedBecause -eq 'Error') {
+
+            $SkippedReason = "An error occurred while running the test. ⚠️"
+            if ($SkippedError) {
+                $SkippedReason += "`n`n" + '```' + "`n`n" + ($SkippedError | Out-String) + "`n`n" + '```' + "`n`n"
+            }
         } else {
             $SkippedReason = Get-MtSkippedReason $SkippedBecause
         }
+    }
 
-        if ([string]::IsNullOrEmpty($Result)) {
-            $Result = "Skipped. $SkippedReason"
-        }
+    if ([string]::IsNullOrEmpty($Result)) {
+        $Result = "Skipped. $SkippedReason"
     }
 
     if ([string]::IsNullOrEmpty($Description)) {
         # Check if a markdown file exists for the cmdlet and parse the content
-        $cmdletPath = $MyInvocation.PSCommandPath
-        $markdownPath = $cmdletPath -replace '.ps1', '.md'
-        if (Test-Path $markdownPath) {
-            # Read the content and split it into description and result with "<!--- Results --->" as the separator
-            $content = Get-Content $markdownPath -Raw
-            $splitContent = $content -split "<!--- Results --->"
-            $mdDescription = $splitContent[0]
-            $mdResult = $splitContent[1]
+        try {
+            $cmdletPath = $MyInvocation.PSCommandPath
+            $markdownPath = $cmdletPath -replace '.ps1', '.md'
+            if (Test-Path $markdownPath) {
+                # Read the content and split it into description and result with "<!--- Results --->" as the separator
+                $content = Get-Content $markdownPath -Raw -ErrorAction Stop
+                $splitContent = $content -split "<!--- Results --->"
+                $mdDescription = $splitContent[0]
+                $mdResult = $splitContent[1]
 
-            if (![string]::IsNullOrEmpty($Result)) {
-                # If a result was provided in the parameter insert it into the markdown content
-                if ($mdResult -match "%TestResult%") {
-                    $mdResult = $mdResult -replace "%TestResult%", $Result
-                } else {
-                    $mdResult = $Result
+                if (![string]::IsNullOrEmpty($Result)) {
+                    # If a result was provided in the parameter insert it into the markdown content
+                    try {
+                        if ($mdResult -match "%TestResult%") {
+                            $mdResult = $mdResult -replace "%TestResult%", $Result
+                        } else {
+                            $mdResult = $Result
+                        }
+                    } catch {
+                        Write-Warning "Failed to process markdown result template: $($_.Exception.Message)"
+                        $mdResult = $Result
+                    } # End of try-catch for result replacement in the markdown template.
                 }
-            }
 
-            $Description = $mdDescription
-            $Result = $mdResult
-        }
+                $Description = $mdDescription
+                $Result = $mdResult
+            }
+        } catch {
+            Write-Warning "Failed to read markdown file '$markdownPath': $($_.Exception.Message)"
+            # Continue without markdown content
+        } # End of try-catch for markdown file reading
     }
 
     if ($hasGraphResults) {
-        $graphResultMarkdown = Get-GraphObjectMarkdown -GraphObjects $GraphObjects -GraphObjectType $GraphObjectType
-        $Result = $Result -replace "%TestResult%", $graphResultMarkdown
+        try {
+            $graphResultMarkdown = Get-GraphObjectMarkdown -GraphObjects $GraphObjects -GraphObjectType $GraphObjectType
+            $Result = $Result -replace "%TestResult%", $graphResultMarkdown
+        } catch {
+            Write-Warning "Failed to generate graph object markdown: $($_.Exception.Message)"
+            # Continue with original result without graph object markdown
+        }
+    }
+
+    if ([string]::IsNullOrEmpty($TestTitle)) {
+        # If no test title is provided, use the test name
+        $TestTitle = $____Pester.CurrentTest.ExpandedName
+    }
+
+    if ([string]::IsNullOrEmpty($Severity)) {
+        # Check if the test has a severity tag using the internal helper function
+        try {
+            $Severity = Get-MtPesterTagValue -TagName 'Severity'
+        } catch {
+            Write-Warning "Failed to get severity tag: $($_.Exception.Message)"
+            $Severity = ''
+        }
+    }
+
+    try {
+        $Service = Get-MtPesterTagValue -TagName 'Service'
+    } catch {
+        Write-Warning "Failed to get service tag: $($_.Exception.Message)"
+        $Service = ''
     }
 
     $testInfo = @{
+        TestTitle       = $TestTitle
         TestDescription = $Description
         TestResult      = $Result
         TestSkipped     = $SkippedBecause
         SkippedReason   = $SkippedReason
+        Severity        = $Severity
+        Service         = $Service
     }
 
     Write-MtProgress -Activity "Running tests" -Status $testName
@@ -138,6 +197,8 @@ function Add-MtTestResultDetail {
     if ($__MtSession -and $__MtSession.TestResultDetail) {
         if (![string]::IsNullOrEmpty($testName)) {
             # Only set if we are running in the context of Maester
+
+            # Check if the test name is already in the session and display a warning
             $__MtSession.TestResultDetail[$testName] = $testInfo
         }
     }

@@ -16,7 +16,7 @@ To enable DKIM:
 #### Related links
 
 * [Microsoft 365 Defender](https://security.microsoft.com)
-* [CIS Microsoft 365 Foundations Benchmark v3.1.0 - Page 84](https://www.cisecurity.org/benchmark/microsoft_365)
+* [CIS Microsoft 365 Foundations Benchmark v5.0.0 - Page 98](https://www.cisecurity.org/benchmark/microsoft_365)
 
 <!--- Results --->
 %TestResult%
