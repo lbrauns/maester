@@ -51,8 +51,10 @@ function Get-MtGraphScope {
 
     # Default read-only scopes required for Maester.
     $scopes = @( #IMPORTANT: Read note above before adding any new scopes.
+        'AuditLog.Read.All'
         'DeviceManagementConfiguration.Read.All'
         'DeviceManagementManagedDevices.Read.All'
+        'DeviceManagementServiceConfig.Read.All'
         'Directory.Read.All'
         'DirectoryRecommendations.Read.All'
         'IdentityRiskEvent.Read.All'
@@ -63,12 +65,10 @@ function Get-MtGraphScope {
         'RoleEligibilitySchedule.Read.Directory'
         'RoleManagement.Read.All'
         'SecurityIdentitiesSensors.Read.All'
-        'SecurityIdentitiesHealth.Read.All'        
+        'SecurityIdentitiesHealth.Read.All'
         'SharePointTenantSettings.Read.All'
         'UserAuthenticationMethod.Read.All'
-        'AuditLog.Read.All',
-        'DeviceManagementManagedDevices.Read.All'
-        'DeviceManagementConfiguration.Read.All'
+
     )
 
     # Any changes made to these permission scopes should be reflected in the documentation.

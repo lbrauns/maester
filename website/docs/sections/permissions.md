@@ -1,3 +1,5 @@
+- **AuditLog.Read.All**
+- **DeviceManagementConfiguration.Read.All**
 - **DeviceManagementConfiguration.Read.All**
 - **DeviceManagementManagedDevices.Read.All**
 - **Directory.Read.All**
