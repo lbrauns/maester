@@ -273,7 +273,7 @@
                   Write-Host "`nThe SharePoint Online Management PowerShell module is not installed. Please install the module using the following command. For more information see https://learn.microsoft.com/en-us/powershell/sharepoint/sharepoint-online/connect-sharepoint-online" -ForegroundColor Red
                   Write-Host "`Install-Module Microsoft.Online.SharePoint.PowerShell -Scope CurrentUser`n" -ForegroundColor Yellow
                   if ($PSVersionTable.PSVersion.Major -ge '7') {
-                     Write-Host "`nYou are using Windows Powershell 7. Please import the SharePoint Online Management module using the following command:" -ForegroundColor Red
+                     Write-Host "`nYou are using Windows Powershell 7. Please install the module in the Windows PowerShell and import the SharePoint Online Management module in PowerShell version 7 using the following command:" -ForegroundColor Red
                      Write-Host "`Import-Module Microsoft.Online.SharePoint.PowerShell -UseWindowsPowerShell`n" -ForegroundColor Yellow
                   }
                }
