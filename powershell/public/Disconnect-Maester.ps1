@@ -45,4 +45,8 @@ function Disconnect-Maester {
       Write-Verbose -Message "Disconnecting from Microsoft Teams."
       Disconnect-MicrosoftTeams
    }
+   if($__MtSession.Connections -contains "SharePointOnline" -or $__MtSession.Connections -contains "All"){
+      Write-Verbose -Message "Disconnecting from Microsoft SharePoint Online."
+      Disconnect-SPOService
+   }
 }

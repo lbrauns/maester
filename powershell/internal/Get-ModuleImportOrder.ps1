@@ -29,7 +29,8 @@ function Get-ModuleImportOrder {
             'Az.Accounts',
             'ExchangeOnlineManagement',
             'Microsoft.Graph.Authentication',
-            'MicrosoftTeams'
+            'MicrosoftTeams',
+            'Microsoft.Online.SharePoint.PowerShell'
         )
     )
 
@@ -95,7 +96,8 @@ function Get-ModuleImportOrder {
                     'Az.Accounts',
                     'ExchangeOnlineManagement',
                     'Microsoft.Graph.Authentication',
-                    'MicrosoftTeams'
+                    'MicrosoftTeams',
+                    'Microsoft.Online.SharePoint.PowerShell'
                 )
             )
 
