@@ -86,7 +86,11 @@ function Add-MtTestResultDetail {
         # Severity level of the test result. Leave empty if no Severity is defined yet.
         [Parameter(Mandatory = $false)]
         [ValidateSet('Critical', 'High', 'Medium', 'Low', 'Info', '')]
-        [string] $Severity
+        [string] $Severity,
+
+        # Test results for later use to export a csv file on a per test basis.
+        [Parameter(Mandatory = $false)]
+        [PSObject]$Csv
     )
 
     $hasGraphResults = $GraphObjects -and $GraphObjectType
@@ -187,6 +191,7 @@ function Add-MtTestResultDetail {
         SkippedReason   = $SkippedReason
         Severity        = $Severity
         Service         = $Service
+        Csv             = $Csv
     }
 
     Write-MtProgress -Activity "Running tests" -Status $testName
