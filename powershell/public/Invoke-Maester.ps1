@@ -230,6 +230,7 @@ function Invoke-Maester {
             $out.OutputHtmlFile = Join-Path $out.OutputFolder "$($out.OutputFolderFileName).html"
             $out.OutputMarkdownFile = Join-Path $out.OutputFolder "$($out.OutputFolderFileName).md"
             $out.OutputJsonFile = Join-Path $out.OutputFolder "$($out.OutputFolderFileName).json"
+            $out.OutputCsvFilePerTest = Join-Path $out.OutputFolder $($out.OutputFolderFileName)
 
             if($ExportCsv.IsPresent) {
                 $out.OutputCsvFile = Join-Path $out.OutputFolder "$($out.OutputFolderFileName).csv"
@@ -318,6 +319,7 @@ function Invoke-Maester {
         OutputJsonFile       = $OutputJsonFile
         OutputCsvFile        = $null
         OutputExcelFile      = $null
+        OutputCsvFilePerTest = $OutputCsvFilePerTest
     }
 
     $result = ValidateAndSetOutputFiles $out
@@ -389,6 +391,18 @@ function Invoke-Maester {
             Write-MtProgress -Activity "Creating markdown report"
             $output = Get-MtMarkdownReport -MaesterResults $maesterResults
             $output | Out-File -FilePath $out.OutputMarkdownFile -Encoding UTF8
+        }
+
+        # outputs cvs file on a per test basis
+        if (![string]::IsNullOrEmpty($out.OutputCsvFilePerTest)) {
+            Write-MtProgress -Activity "Creating CSVs file"
+
+            foreach ($test in $maesterResults.Tests) {
+                if (!($null -eq $test.ResultDetail.csv)) {
+                    $PathPerTest = "$($out.OutputCsvFilePerTest)_$($test.id).csv"
+                    $test.ResultDetail['Csv'] | Export-Csv -Path $PathPerTest -NoTypeInformation
+                }
+            }
         }
 
         if (![string]::IsNullOrEmpty($out.OutputCsvFile)) {
